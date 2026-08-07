@@ -1,0 +1,83 @@
+@import "tailwindcss";
+
+@theme {
+  --color-primary-bg: #e1e9f2;
+  --color-primary-accent: #73a0c8;
+  --font-sans: var(--font-outfit), sans-serif;
+  --font-heading: var(--font-plus-jakarta-sans), sans-serif;
+  
+  --animate-blink-glow: blink-glow 3s infinite ease-in-out;
+  --animate-pulse-slow: pulse-slow 4s infinite ease-in-out;
+
+  @keyframes blink-glow {
+    0%, 100% {
+      box-shadow: 0 0 15px 2px rgba(115, 160, 200, 0.4);
+      border-color: rgba(115, 160, 200, 0.4);
+    }
+    50% {
+      box-shadow: 0 0 35px 12px rgba(115, 160, 200, 0.9);
+      border-color: rgba(115, 160, 200, 0.8);
+    }
+  }
+  @keyframes pulse-slow {
+    0%, 100% {
+      transform: scale(1);
+    }
+    50% {
+      transform: scale(1.04);
+    }
+  }
+}
+
+:root {
+  --background: #e1e9f2;
+  --foreground: #1e293b;
+}
+
+body {
+  background-color: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* Glassmorphism soft card utility classes */
+.glass-card {
+  background: rgba(255, 255, 255, 0.75);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  box-shadow: 0 10px 30px -5px rgba(100, 116, 139, 0.1),
+              0 4px 6px -2px rgba(100, 116, 139, 0.05);
+}
+
+.glass-card-hover {
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.glass-card-hover:hover {
+  transform: translateY(-4px);
+  background: rgba(255, 255, 255, 0.85);
+  box-shadow: 0 20px 40px -10px rgba(100, 116, 139, 0.15),
+              0 8px 16px -4px rgba(100, 116, 139, 0.08);
+}
+
+/* Replica Design Utilities */
+.replica-dot-grid {
+  background-image: radial-gradient(rgba(115, 160, 200, 0.2) 1px, transparent 1px);
+  background-size: 16px 16px;
+}
+
+@keyframes float-slow {
+  0%, 100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-10px) rotate(5deg);
+  }
+}
+
+.animate-float {
+  animation: float-slow 6s infinite ease-in-out;
+}
