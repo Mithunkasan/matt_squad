@@ -1,0 +1,36 @@
+{
+  "name": "MATT SQUAD - Project Management",
+  "short_name": "MATT SQUAD",
+  "description": "A premium dashboard for tracking goals, tasks, and project balances.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#e1e9f2",
+  "theme_color": "#73a0c8",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "type": "image/png",
+      "sizes": "192x192",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-192-maskable.png",
+      "type": "image/png",
+      "sizes": "192x192",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/icon-512.png",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-512-maskable.png",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "maskable"
+    }
+  ]
+}
