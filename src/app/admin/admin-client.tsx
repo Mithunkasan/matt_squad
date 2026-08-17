@@ -14,19 +14,24 @@ import { AnimatedNumber } from "@/components/ui/animated-number";
 import { createTask, updateTask, deleteTask, updateGoal } from "../actions";
 import { Plus, Mail, ShieldAlert, Search, Landmark, Coins, ClipboardList, CheckCircle, Target, Calendar, Clock, Hourglass } from "lucide-react";
 
+interface GoalData {
+  id: string;
+  amount: number;
+  startDate: string;
+  startTime: string;
+  endDate: string;
+  endTime: string;
+}
+
 interface AdminDashboardClientProps {
-  initialGoal: {
-    amount: number;
-    startDate: string;
-    startTime: string;
-    endDate: string;
-    endTime: string;
-  };
+  goal1: GoalData;
+  goal2: GoalData;
   initialTasks: TaskType[];
 }
 
 export default function AdminDashboardClient({
-  initialGoal,
+  goal1,
+  goal2,
   initialTasks,
 }: AdminDashboardClientProps) {
   // Authentication states
@@ -34,13 +39,37 @@ export default function AdminDashboardClient({
   const [username, setUsername] = React.useState("");
   const [authError, setAuthError] = React.useState("");
   
-  // Dashboard states
-  const [goal, setGoal] = React.useState(initialGoal.amount);
-  const [startDate, setStartDate] = React.useState(initialGoal.startDate);
-  const [startTime, setStartTime] = React.useState(initialGoal.startTime);
-  const [endDate, setEndDate] = React.useState(initialGoal.endDate);
-  const [endTime, setEndTime] = React.useState(initialGoal.endTime);
+  // Active Goal ID selector state
+  const [activeGoalId, setActiveGoalId] = React.useState<'default-goal' | 'default-goal-2'>('default-goal');
+  
+  // Dashboard states for Goal 1
+  const [goal1Amount, setGoal1Amount] = React.useState(goal1.amount);
+  const [startDate1, setStartDate1] = React.useState(goal1.startDate);
+  const [startTime1, setStartTime1] = React.useState(goal1.startTime);
+  const [endDate1, setEndDate1] = React.useState(goal1.endDate);
+  const [endTime1, setEndTime1] = React.useState(goal1.endTime);
+
+  // Dashboard states for Goal 2
+  const [goal2Amount, setGoal2Amount] = React.useState(goal2.amount);
+  const [startDate2, setStartDate2] = React.useState(goal2.startDate);
+  const [startTime2, setStartTime2] = React.useState(goal2.startTime);
+  const [endDate2, setEndDate2] = React.useState(goal2.endDate);
+  const [endTime2, setEndTime2] = React.useState(goal2.endTime);
+
   const [tasks, setTasks] = React.useState<TaskType[]>(initialTasks);
+
+  // Dynamic getters/setters for active goal
+  const goal = activeGoalId === 'default-goal' ? goal1Amount : goal2Amount;
+  const startDate = activeGoalId === 'default-goal' ? startDate1 : startDate2;
+  const startTime = activeGoalId === 'default-goal' ? startTime1 : startTime2;
+  const endDate = activeGoalId === 'default-goal' ? endDate1 : endDate2;
+  const endTime = activeGoalId === 'default-goal' ? endTime1 : endTime2;
+
+  const setGoal = activeGoalId === 'default-goal' ? setGoal1Amount : setGoal2Amount;
+  const setStartDate = activeGoalId === 'default-goal' ? setStartDate1 : setStartDate2;
+  const setStartTime = activeGoalId === 'default-goal' ? setStartTime1 : setStartTime2;
+  const setEndDate = activeGoalId === 'default-goal' ? setEndDate1 : setEndDate2;
+  const setEndTime = activeGoalId === 'default-goal' ? setEndTime1 : setEndTime2;
   const [searchQuery, setSearchQuery] = React.useState("");
   
   // Settings saving states
@@ -82,7 +111,7 @@ export default function AdminDashboardClient({
   // Handle Goal Update from Navbar
   const handleGoalUpdate = async (newGoal: number) => {
     setGoal(newGoal); // optimistic update
-    const result = await updateGoal(newGoal, startDate, startTime, endDate, endTime);
+    const result = await updateGoal(newGoal, startDate, startTime, endDate, endTime, activeGoalId);
     if (!result.success) {
       alert("Failed to save goal to the database. Reverting.");
       setGoal(goal);
@@ -100,7 +129,8 @@ export default function AdminDashboardClient({
       startDate || null,
       startTime || null,
       endDate || null,
-      endTime || null
+      endTime || null,
+      activeGoalId
     );
 
     if (result.success) {
@@ -154,6 +184,7 @@ export default function AdminDashboardClient({
           id: result.data.id,
           taskName: result.data.taskName,
           amount: result.data.amount,
+          goalId: result.data.goalId,
           createdAt: result.data.createdAt.toISOString(),
         };
         setTasks((prev) => prev.map((t) => (t.id === editingTask.id ? updated : t)));
@@ -163,12 +194,13 @@ export default function AdminDashboardClient({
       }
     } else {
       // Create action
-      const result = await createTask(taskName.trim(), amountNum);
+      const result = await createTask(taskName.trim(), amountNum, activeGoalId);
       if (result.success && result.data) {
         const created: TaskType = {
           id: result.data.id,
           taskName: result.data.taskName,
           amount: result.data.amount,
+          goalId: result.data.goalId,
           createdAt: result.data.createdAt.toISOString(),
         };
         setTasks((prev) => [created, ...prev]);
@@ -194,13 +226,20 @@ export default function AdminDashboardClient({
     }
   };
 
-  // Calculations
-  const totalTaskAmount = tasks.reduce((sum, task) => sum + task.amount, 0);
+  // Filter tasks by active goal set
+  const activeTasks = tasks.filter((t) => 
+    activeGoalId === 'default-goal'
+      ? (!t.goalId || t.goalId === 'default-goal')
+      : t.goalId === 'default-goal-2'
+  );
+
+  // Calculations based on active goal set
+  const totalTaskAmount = activeTasks.reduce((sum, task) => sum + task.amount, 0);
   const remainingBalance = goal - totalTaskAmount;
   const percentageSpent = Math.min((totalTaskAmount / (goal || 1)) * 100, 100);
 
   // Filtering
-  const filteredTasks = tasks.filter((t) =>
+  const filteredTasks = activeTasks.filter((t) =>
     t.taskName.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
@@ -301,6 +340,29 @@ export default function AdminDashboardClient({
           transition={{ duration: 0.5 }}
           className="space-y-8"
         >
+          {/* Goal Set Toggle/Tabs */}
+          <div className="flex justify-center bg-white/50 backdrop-blur-sm p-1.5 rounded-2xl border border-white/60 max-w-sm mx-auto shadow-sm select-none">
+            <button
+              onClick={() => setActiveGoalId('default-goal')}
+              className={`flex-1 py-2.5 px-4 rounded-xl text-xs font-bold uppercase tracking-wider transition-all duration-300 cursor-pointer ${
+                activeGoalId === 'default-goal'
+                  ? 'bg-[#73a0c8] text-white shadow-md shadow-[#73a0c8]/25'
+                  : 'text-slate-600 hover:text-slate-800 hover:bg-white/40'
+              }`}
+            >
+              Goal Set 1
+            </button>
+            <button
+              onClick={() => setActiveGoalId('default-goal-2')}
+              className={`flex-1 py-2.5 px-4 rounded-xl text-xs font-bold uppercase tracking-wider transition-all duration-300 cursor-pointer ${
+                activeGoalId === 'default-goal-2'
+                  ? 'bg-[#73a0c8] text-white shadow-md shadow-[#73a0c8]/25'
+                  : 'text-slate-600 hover:text-slate-800 hover:bg-white/40'
+              }`}
+            >
+              Goal Set 2
+            </button>
+          </div>
           {/* Dashboard Summary Statistics */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {/* Total Task Amount */}

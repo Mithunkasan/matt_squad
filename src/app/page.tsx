@@ -4,29 +4,36 @@ import LandingContent from "./landing-content";
 export const dynamic = 'force-dynamic';
 
 export default async function Home() {
-  const goalResult = await getGoal();
+  const goal1Result = await getGoal('default-goal');
+  const goal2Result = await getGoal('default-goal-2');
   const tasksResult = await getTasks();
 
-  const goalData = goalResult.success && goalResult.data ? goalResult.data : null;
-  const goalAmount = goalData ? goalData.amount : 5000.0;
-  const startDate = goalData ? goalData.startDate : null;
-  const startTime = goalData ? goalData.startTime : null;
-  const endDate = goalData ? goalData.endDate : null;
-  const endTime = goalData ? goalData.endTime : null;
+  const goal1Data = goal1Result.success && goal1Result.data ? goal1Result.data : null;
+  const goal2Data = goal2Result.success && goal2Result.data ? goal2Result.data : null;
+  const allTasks = tasksResult.success && tasksResult.data ? tasksResult.data : [];
 
-  const tasks = tasksResult.success && tasksResult.data ? tasksResult.data : [];
-  
-  // Calculate total task amount
-  const totalTaskAmount = tasks.reduce((sum, task) => sum + task.amount, 0);
+  const goal1 = {
+    amount: goal1Data ? goal1Data.amount : 5000.0,
+    startDate: goal1Data?.startDate || null,
+    startTime: goal1Data?.startTime || null,
+    endDate: goal1Data?.endDate || null,
+    endTime: goal1Data?.endTime || null,
+    tasks: allTasks.filter(t => !t.goalId || t.goalId === 'default-goal'),
+  };
+
+  const goal2 = {
+    amount: goal2Data ? goal2Data.amount : 5000.0,
+    startDate: goal2Data?.startDate || null,
+    startTime: goal2Data?.startTime || null,
+    endDate: goal2Data?.endDate || null,
+    endTime: goal2Data?.endTime || null,
+    tasks: allTasks.filter(t => t.goalId === 'default-goal-2'),
+  };
 
   return (
     <LandingContent
-      initialGoal={goalAmount}
-      initialTotalTaskAmount={totalTaskAmount}
-      startDate={startDate}
-      startTime={startTime}
-      endDate={endDate}
-      endTime={endTime}
+      goal1={goal1}
+      goal2={goal2}
     />
   );
 }
