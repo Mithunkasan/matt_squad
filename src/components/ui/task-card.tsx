@@ -10,6 +10,7 @@ export interface TaskType {
   id: string;
   taskName: string;
   amount: number;
+  goalId?: string;
   createdAt: Date | string;
 }
 

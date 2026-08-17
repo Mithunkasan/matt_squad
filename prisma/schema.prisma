@@ -21,6 +21,7 @@ model Task {
   id        String   @id @default(uuid())
   taskName  String
   amount    Float
+  goalId    String   @default("default-goal")
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }

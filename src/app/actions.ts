@@ -3,39 +3,40 @@
 import db from '@/lib/db';
 import { revalidatePath } from 'next/cache';
 
-// Fetch the single Goal record (create default 5000 if it doesn't exist)
-export async function getGoal() {
+// Fetch specific Goal record (create default 5000 if it doesn't exist)
+export async function getGoal(id: string = 'default-goal') {
   try {
     let goal = await db.goal.findUnique({
-      where: { id: 'default-goal' },
+      where: { id },
     });
 
     if (!goal) {
       goal = await db.goal.create({
         data: {
-          id: 'default-goal',
+          id,
           amount: 5000.0,
         },
       });
     }
     return { success: true, data: goal };
   } catch (error: any) {
-    console.error('Error fetching goal:', error);
+    console.error(`Error fetching goal ${id}:`, error);
     return { success: false, error: error.message || 'Failed to fetch goal' };
   }
 }
 
-// Update the single Goal record
+// Update specific Goal record
 export async function updateGoal(
   amount: number,
   startDate?: string | null,
   startTime?: string | null,
   endDate?: string | null,
-  endTime?: string | null
+  endTime?: string | null,
+  id: string = 'default-goal'
 ) {
   try {
     const goal = await db.goal.upsert({
-      where: { id: 'default-goal' },
+      where: { id },
       update: {
         amount,
         startDate,
@@ -44,7 +45,7 @@ export async function updateGoal(
         endTime,
       },
       create: {
-        id: 'default-goal',
+        id,
         amount,
         startDate,
         startTime,
@@ -56,15 +57,17 @@ export async function updateGoal(
     revalidatePath('/admin');
     return { success: true, data: goal };
   } catch (error: any) {
-    console.error('Error updating goal:', error);
+    console.error(`Error updating goal ${id}:`, error);
     return { success: false, error: error.message || 'Failed to update goal' };
   }
 }
 
-// Fetch all Tasks
-export async function getTasks() {
+// Fetch all Tasks (optionally filtered by goalId)
+export async function getTasks(goalId?: string) {
   try {
+    const whereClause = goalId ? { goalId } : {};
     const tasks = await db.task.findMany({
+      where: whereClause,
       orderBy: { createdAt: 'desc' },
     });
     return { success: true, data: tasks };
@@ -74,13 +77,14 @@ export async function getTasks() {
   }
 }
 
-// Create a new Task
-export async function createTask(taskName: string, amount: number) {
+// Create a new Task associated with a Goal Set
+export async function createTask(taskName: string, amount: number, goalId: string = 'default-goal') {
   try {
     const task = await db.task.create({
       data: {
         taskName,
         amount,
+        goalId,
       },
     });
     revalidatePath('/');

@@ -1,35 +1,51 @@
 'use client';
 
 import * as React from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { Logo } from "@/components/ui/logo";
 import { GoalCard, BalanceCard } from "@/components/ui/stat-cards";
 import { AmountCircle } from "@/components/ui/amount-circle";
-import { Calendar, Clock, Hourglass, Sparkles } from "lucide-react";
+import { Calendar, Clock, Hourglass, Sparkles, ArrowLeft, ArrowRight } from "lucide-react";
 
-interface LandingContentProps {
-  initialGoal: number;
-  initialTotalTaskAmount: number;
+interface GoalData {
+  amount: number;
   startDate?: string | null;
   startTime?: string | null;
   endDate?: string | null;
   endTime?: string | null;
+  tasks: Array<{ id: string; taskName: string; amount: number }>;
+}
+
+interface LandingContentProps {
+  goal1: GoalData;
+  goal2: GoalData;
 }
 
 export default function LandingContent({
-  initialGoal,
-  initialTotalTaskAmount,
-  startDate,
-  startTime,
-  endDate,
-  endTime,
+  goal1,
+  goal2,
 }: LandingContentProps) {
+  const [activeGoalSet, setActiveGoalSet] = React.useState<1 | 2>(1);
+
+  // Active goal variables
+  const currentGoalSet = activeGoalSet === 1 ? goal1 : goal2;
+  const initialGoal = currentGoalSet.amount;
+  const initialTotalTaskAmount = currentGoalSet.tasks.reduce((sum, task) => sum + task.amount, 0);
   const balance = initialGoal - initialTotalTaskAmount;
+  const startDate = currentGoalSet.startDate;
+  const startTime = currentGoalSet.startTime;
+  const endDate = currentGoalSet.endDate;
+  const endTime = currentGoalSet.endTime;
+
   const [daysRemaining, setDaysRemaining] = React.useState<number | null>(null);
   const [campaignStatus, setCampaignStatus] = React.useState<"not-started" | "active" | "ended" | null>(null);
 
   React.useEffect(() => {
-    if (!endDate) return;
+    if (!endDate) {
+      setDaysRemaining(null);
+      setCampaignStatus(null);
+      return;
+    }
 
     const calculateTime = () => {
       const now = new Date();
@@ -140,89 +156,135 @@ export default function LandingContent({
             <div className="h-[1px] flex-grow bg-slate-300/60" />
           </div>
 
-          {/* Campaign Timeline Countdown Banner */}
-          {endDate && (
-            <motion.div
-              initial={{ opacity: 0, y: 15 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.15 }}
-              className="mb-8 w-full max-w-md bg-white/70 border border-white/60 backdrop-blur-md rounded-2xl p-4 shadow-sm flex items-center justify-between gap-4 select-none"
-            >
-              <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#73a0c8]/10 text-[#73a0c8]">
-                  {campaignStatus === "not-started" ? (
-                    <Calendar className="h-5 w-5" />
-                  ) : campaignStatus === "ended" ? (
-                    <Clock className="h-5 w-5 text-rose-500 animate-pulse" />
-                  ) : (
-                    <Hourglass className="h-5 w-5 text-[#73a0c8] animate-pulse" />
-                  )}
-                </div>
-                <div className="text-left">
-                  <p className="text-[9px] font-bold uppercase tracking-wider text-slate-400">
-                    Campaign Timeline
-                  </p>
-                  <p className="text-xs font-semibold text-slate-600 mt-0.5">
-                    {campaignStatus === "not-started" && `Starts: ${startDate} ${startTime || ''}`}
-                    {campaignStatus === "active" && `Ends: ${endDate} ${endTime || ''}`}
-                    {campaignStatus === "ended" && "Campaign Ended"}
-                  </p>
-                </div>
-              </div>
-              <div className="text-right">
-                <h4 className="font-heading font-black text-xl text-slate-800 tracking-tight">
-                  {campaignStatus === "not-started" ? (
-                    <span>{daysRemaining} Days Left</span>
-                  ) : campaignStatus === "ended" ? (
-                    <span className="text-rose-500 font-bold">Ended</span>
-                  ) : (
-                    <span>{daysRemaining} {daysRemaining === 1 ? 'Day' : 'Days'} Left</span>
-                  )}
-                </h4>
-                <p className="text-[9px] font-semibold uppercase tracking-wider text-slate-400 mt-0.5">
-                  {campaignStatus === "not-started" ? "Until Start" : campaignStatus === "ended" ? "Completed" : "Remaining"}
-                </p>
-              </div>
-            </motion.div>
-          )}
+          {/* Arrow navigation bar - placed above "Your Goal" content */}
+          <div className="relative w-full max-w-md flex items-center justify-between px-6 mb-4 z-20">
+            {/* Left Arrow (only visible on Goal Set 2) */}
+            <div className="w-10 h-10 flex items-center justify-center">
+              {activeGoalSet === 2 && (
+                <motion.button
+                  whileHover={{ scale: 1.1, x: -2 }}
+                  whileTap={{ scale: 0.9 }}
+                  onClick={() => setActiveGoalSet(1)}
+                  className="p-2 rounded-full bg-white/85 border border-white/60 text-[#4a80b0] hover:text-blue-600 shadow-sm cursor-pointer flex items-center justify-center transition-colors"
+                >
+                  <ArrowLeft className="h-5 w-5 stroke-[2.5]" />
+                </motion.button>
+              )}
+            </div>
 
-          {/* Centered column stack layout: GoalCard -> Circle -> BalanceCard */}
-          <div className="flex flex-col items-center gap-8 w-full max-w-md sm:max-w-lg px-4">
-            
-            {/* Goal Card */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.2 }}
-              className="w-full"
-            >
-              <GoalCard amount={initialGoal} />
-            </motion.div>
+            <span className="text-[11px] font-bold uppercase tracking-widest text-[#4a80b0]/80 bg-white/60 border border-white/40 backdrop-blur-sm px-4 py-1.5 rounded-full shadow-sm select-none">
+              Goal Set {activeGoalSet}
+            </span>
 
-            {/* Glowing Circular Progress Card */}
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.6, delay: 0.3 }}
-              className="flex justify-center w-full"
-            >
-              <AmountCircle amount={initialTotalTaskAmount} />
-            </motion.div>
-
-            {/* Balance Card (Dynamic Equation Formula display) */}
-            <motion.div
-              initial={{ opacity: 0, y: -20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.4 }}
-              className="w-full"
-            >
-              <BalanceCard 
-                amount={balance} 
-                goal={initialGoal} 
-                completed={initialTotalTaskAmount} 
-              />
-            </motion.div>
+            {/* Right Arrow (only visible on Goal Set 1) */}
+            <div className="w-10 h-10 flex items-center justify-center">
+              {activeGoalSet === 1 && (
+                <motion.button
+                  whileHover={{ scale: 1.1, x: 2 }}
+                  whileTap={{ scale: 0.9 }}
+                  onClick={() => setActiveGoalSet(2)}
+                  className="p-2 rounded-full bg-white/85 border border-white/60 text-[#4a80b0] hover:text-blue-600 shadow-sm cursor-pointer flex items-center justify-center transition-colors"
+                >
+                  <ArrowRight className="h-5 w-5 stroke-[2.5]" />
+                </motion.button>
+              )}
+            </div>
           </div>
+
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={activeGoalSet}
+              initial={{ opacity: 0, x: activeGoalSet === 1 ? -30 : 30 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: activeGoalSet === 1 ? 30 : -30 }}
+              transition={{ duration: 0.35, ease: "easeInOut" }}
+              className="w-full flex flex-col items-center justify-center"
+            >
+              {/* Campaign Timeline Countdown Banner */}
+              {endDate && (
+                <motion.div
+                  initial={{ opacity: 0, y: 15 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.6, delay: 0.05 }}
+                  className="mb-8 w-full max-w-md bg-white/70 border border-white/60 backdrop-blur-md rounded-2xl p-4 shadow-sm flex items-center justify-between gap-4 select-none animate-none"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#73a0c8]/10 text-[#73a0c8]">
+                      {campaignStatus === "not-started" ? (
+                        <Calendar className="h-5 w-5" />
+                      ) : campaignStatus === "ended" ? (
+                        <Clock className="h-5 w-5 text-rose-500 animate-pulse" />
+                      ) : (
+                        <Hourglass className="h-5 w-5 text-[#73a0c8] animate-pulse" />
+                      )}
+                    </div>
+                    <div className="text-left">
+                      <p className="text-[9px] font-bold uppercase tracking-wider text-slate-400">
+                        Campaign Timeline
+                      </p>
+                      <p className="text-xs font-semibold text-slate-600 mt-0.5">
+                        {campaignStatus === "not-started" && `Starts: ${startDate} ${startTime || ''}`}
+                        {campaignStatus === "active" && `Ends: ${endDate} ${endTime || ''}`}
+                        {campaignStatus === "ended" && "Campaign Ended"}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <h4 className="font-heading font-black text-xl text-slate-800 tracking-tight">
+                      {campaignStatus === "not-started" ? (
+                        <span>{daysRemaining} Days Left</span>
+                      ) : campaignStatus === "ended" ? (
+                        <span className="text-rose-500 font-bold">Ended</span>
+                      ) : (
+                        <span>{daysRemaining} {daysRemaining === 1 ? 'Day' : 'Days'} Left</span>
+                      )}
+                    </h4>
+                    <p className="text-[9px] font-semibold uppercase tracking-wider text-slate-400 mt-0.5">
+                      {campaignStatus === "not-started" ? "Until Start" : campaignStatus === "ended" ? "Completed" : "Remaining"}
+                    </p>
+                  </div>
+                </motion.div>
+              )}
+
+              {/* Centered column stack layout: GoalCard -> Circle -> BalanceCard */}
+              <div className="flex flex-col items-center gap-8 w-full max-w-md sm:max-w-lg px-4">
+                
+                {/* Goal Card */}
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.6, delay: 0.1 }}
+                  className="w-full"
+                >
+                  <GoalCard amount={initialGoal} />
+                </motion.div>
+
+                {/* Glowing Circular Progress Card */}
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ duration: 0.6, delay: 0.15 }}
+                  className="flex justify-center w-full"
+                >
+                  <AmountCircle amount={initialTotalTaskAmount} />
+                </motion.div>
+
+                {/* Balance Card (Dynamic Equation Formula display) */}
+                <motion.div
+                  initial={{ opacity: 0, y: -20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.6, delay: 0.2 }}
+                  className="w-full"
+                >
+                  <BalanceCard 
+                    amount={balance} 
+                    goal={initialGoal} 
+                    completed={initialTotalTaskAmount} 
+                  />
+                </motion.div>
+              </div>
+            </motion.div>
+          </AnimatePresence>
         </motion.div>
       </main>
 
